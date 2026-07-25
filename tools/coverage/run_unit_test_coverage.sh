@@ -59,13 +59,14 @@ cmake -S "${ROOT}" -B "${BUILD_DIR}" \
     -DCMAKE_CXX_COMPILER="${CXX}" || { echo "!! cmake configure failed"; exit 1; }
 
 # --- 2. Build unit_test. ---------------------------------------------------
-# CMake target is llbc_unit_test (project name); its output binary is unit_test[_debug].
+# Build the statically linked unit-test target so both the tests and llbc library
+# code are present in the same instrumented executable.
 echo "==> Building unit_test..."
-cmake --build "${BUILD_DIR}" --target llbc_unit_test -j "${JOBS}" || { echo "!! build failed"; exit 1; }
+cmake --build "${BUILD_DIR}" --target unit_test_static -j "${JOBS}" || { echo "!! build failed"; exit 1; }
 
 # The DEBUG build carries the _debug suffix (CMAKE_DEBUG_POSTFIX).
-UNIT_TEST_BIN="${BIN_DIR}/unit_test_debug"
-[ -x "${UNIT_TEST_BIN}" ] || UNIT_TEST_BIN="${BIN_DIR}/unit_test"
+UNIT_TEST_BIN="${BIN_DIR}/unit_test_static_debug"
+[ -x "${UNIT_TEST_BIN}" ] || UNIT_TEST_BIN="${BIN_DIR}/unit_test_static"
 if [ ! -x "${UNIT_TEST_BIN}" ]; then
     echo "!! unit_test binary not found under ${BIN_DIR}"; exit 1
 fi
