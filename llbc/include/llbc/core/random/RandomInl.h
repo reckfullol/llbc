@@ -35,32 +35,26 @@ inline int LLBC_Random::Rand()
 
 inline int LLBC_Random::Rand(int end)
 {
-    if (LIKELY(end != 0))
-    {
-        if (end > 0)
-            return _mtRand() % end;
-        else
-            return _mtRand() % -end + end;
-    }
-    else
-    {
+    if (UNLIKELY(end == 0))
         return 0;
-    }
+
+    if (end > 0)
+        return static_cast<int>(_mtRand() % static_cast<uint64>(end));
+
+    const auto range = static_cast<uint64>(-static_cast<sint64>(end));
+    return static_cast<int>(static_cast<sint64>(_mtRand() % range) + end);
 }
 
 inline int LLBC_Random::Rand(int begin, int end)
 {
-    if (LIKELY(begin != end))
-    {
-        if (begin < end)
-            return _mtRand() % (end - begin) + begin;
-        else
-            return _mtRand() % (begin - end) + end;
-    }
-    else
-    {
+    if (UNLIKELY(begin == end))
         return begin;
-    }
+
+    const int lower = begin < end ? begin : end;
+    const int upper = begin < end ? end : begin;
+    const auto range = static_cast<uint64>(
+        static_cast<sint64>(upper) - static_cast<sint64>(lower));
+    return static_cast<int>(static_cast<sint64>(_mtRand() % range) + lower);
 }
 
 template <typename _Weights>
@@ -74,6 +68,9 @@ LLBC_Random::Rand(const _Weights &weights)
     for (const auto &weight : weights)
         totalWeight += static_cast<int>(weight);
 
+    if (UNLIKELY(totalWeight <= 0))
+        return 0;
+
     int i = 0;
     int currentWeight = 0;
     const int randomWeight = Rand(0, totalWeight);
@@ -85,7 +82,6 @@ LLBC_Random::Rand(const _Weights &weights)
         i++;
     }
 
-    llbc_assert(false && "llbc framework internal error");
     return 0;
 }
 

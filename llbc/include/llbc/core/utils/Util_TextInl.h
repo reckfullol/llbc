@@ -163,12 +163,12 @@ LLBC_Num2Str(_NumTy num)
 }
 
 #define __LLBC_InlMacro_Num2StrProcessErr()           \
-    if (errno != 0) {                                 \
-        LLBC_SetLastError(LLBC_ERROR_CLIB);           \
+    if (strEnd == str) {                              \
+        LLBC_SetLastError(LLBC_ERROR_INVALID);        \
         return _NumTy();                              \
     }                                                 \
-    else if (strEnd == str) {                         \
-        LLBC_SetLastError(LLBC_ERROR_INVALID);        \
+    else if (errno != 0) {                            \
+        LLBC_SetLastError(LLBC_ERROR_CLIB);           \
         return _NumTy();                              \
     }                                                 \
     else if (*strEnd != '\0') {                       \

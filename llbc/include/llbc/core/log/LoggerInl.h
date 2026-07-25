@@ -98,7 +98,8 @@ int LLBC_Logger::RemoveColorLogKey(const _TraceKeyTy &traceKey)
                                              const char *fmt, \
                                              ...) \
     {                                             \
-        if (_logLevel > LLBC_LogLevel::level)     \
+        if (_logLevel > LLBC_LogLevel::level &&   \
+            !GetColorLogTag())                    \
             return LLBC_OK;                       \
                                                   \
         va_list va;                               \

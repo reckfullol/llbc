@@ -329,17 +329,18 @@ public:
 private:
     template <typename Obj>
     static
-    LLBC_ObjPool *GetTypedObjPoolInl(void *mem,
-                                     object_pool_detectable_type<Obj,
-                                                                 &Obj::GetTypedObjPool,
-                                                                 &Obj::SetTypedObjPool> *)
+    LLBC_TypedObjPool<Obj> *GetTypedObjPoolInl(
+        void *mem,
+        object_pool_detectable_type<Obj,
+                                    &Obj::GetTypedObjPool,
+                                    &Obj::SetTypedObjPool> *)
     {
         return reinterpret_cast<Obj *>(mem)->GetTypedObjPool();
     }
 
     template <typename Obj>
     static constexpr
-    LLBC_ObjPool *GetTypedObjPoolInl(void *mem, ...) { return nullptr; }
+    LLBC_TypedObjPool<Obj> *GetTypedObjPoolInl(void *mem, ...) { return nullptr; }
 
 public:
     // SetTypedObjPool implement.

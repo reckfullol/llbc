@@ -391,7 +391,10 @@ sint64 LLBC_File::OffsetFilePosition(sint64 offset)
     if (UNLIKELY(curPos == -1))
         return LLBC_FAILED;
 
-    return SetFilePosition(curPos + offset);
+    if (SetFilePosition(curPos + offset) != LLBC_OK)
+        return LLBC_FAILED;
+
+    return GetFilePosition();
 }
 
 sint64 LLBC_File::GetReadableSize() const
@@ -457,8 +460,16 @@ LLBC_Strings LLBC_File::ReadLns()
         return LLBC_Strings();
     }
 
-    // File position check.
-    if (UNLIKELY(GetFilePosition() == GetFileSize()))
+    // File position/size check.
+    const sint64 filePosition = GetFilePosition();
+    if (UNLIKELY(filePosition == -1))
+        return LLBC_Strings();
+
+    const sint64 fileSize = GetFileSize();
+    if (UNLIKELY(fileSize == -1))
+        return LLBC_Strings();
+
+    if (UNLIKELY(filePosition == fileSize))
     {
         LLBC_SetLastError(LLBC_ERROR_TRUNCATED);
         return LLBC_Strings();
@@ -975,6 +986,12 @@ int LLBC_File::CopyFile(const LLBC_String &destFilePath, bool overlapped)
 
 int LLBC_File::CopyFile(const LLBC_String &srcFilePath, const LLBC_String &destFilePath, bool overlapped)
 {
+    if (srcFilePath == destFilePath)
+    {
+        LLBC_SetLastError(LLBC_ERROR_ARG);
+        return LLBC_FAILED;
+    }
+
 #if LLBC_TARGET_PLATFORM_WIN32
     if (!::CopyFileA(srcFilePath.c_str(), destFilePath.c_str(), !overlapped))
     {
@@ -990,9 +1007,36 @@ int LLBC_File::CopyFile(const LLBC_String &srcFilePath, const LLBC_String &destF
         return LLBC_FAILED;
     }
 
+#if LLBC_TARGET_PLATFORM_NON_WIN32
+    struct stat srcFileStat;
+    struct stat destFileStat;
+    if (stat(srcFilePath.c_str(), &srcFileStat) == 0 &&
+        stat(destFilePath.c_str(), &destFileStat) == 0 &&
+        srcFileStat.st_dev == destFileStat.st_dev &&
+        srcFileStat.st_ino == destFileStat.st_ino)
+    {
+        LLBC_SetLastError(LLBC_ERROR_ARG);
+        return LLBC_FAILED;
+    }
+#endif
+
+    LLBC_FileAttributes srcFileAttrs {};
+    if (GetFileAttributes(srcFilePath, srcFileAttrs) != LLBC_OK)
+        return LLBC_FAILED;
+
+    if (srcFileAttrs.isDirectory)
+    {
+        LLBC_SetLastError(LLBC_ERROR_NOT_ALLOW);
+        return LLBC_FAILED;
+    }
+
     // Open source file with BinaryRead mode.
     LLBC_File srcFile(srcFilePath, LLBC_FileMode::BinaryRead);
     if (!srcFile.IsOpened())
+        return LLBC_FAILED;
+
+    const sint64 srcFileSize = srcFile.GetFileSize();
+    if (srcFileSize < 0)
         return LLBC_FAILED;
 
     // Check dest file exist or not.
@@ -1007,7 +1051,6 @@ int LLBC_File::CopyFile(const LLBC_String &srcFilePath, const LLBC_String &destF
     if (!destFile.IsOpened())
         return LLBC_FAILED;
 
-    sint64 srcFileSize = srcFile.GetFileSize();
     if (srcFileSize == 0)
         return LLBC_OK;
 
@@ -1108,8 +1151,9 @@ int LLBC_File::DeleteFile()
         return LLBC_FAILED;
     }
 
+    const LLBC_String filePath(_path);
     Close();
-    return DeleteFile(_path);
+    return DeleteFile(filePath);
 }
 
 int LLBC_File::DeleteFile(const LLBC_String &filePath)
