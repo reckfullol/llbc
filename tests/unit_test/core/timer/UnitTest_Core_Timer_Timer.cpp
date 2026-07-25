@@ -96,7 +96,8 @@ TEST(TimerTest, ExposesDefaultStateAndUsesEntryThreadScheduler)
     LLBC_Timer timer;
     const LLBC_Timer &constTimer = timer;
 
-    EXPECT_EQ(timer.GetTimerId(), LLBC_INVALID_TIMER_ID);
+    EXPECT_EQ(timer.GetTimerId(),
+              static_cast<decltype(timer.GetTimerId())>(LLBC_INVALID_TIMER_ID));
     EXPECT_EQ(timer.GetFirstPeriod(), LLBC_TimeSpan::zero);
     EXPECT_EQ(timer.GetPeriod(), LLBC_TimeSpan::zero);
     EXPECT_EQ(timer.GetTotalTriggerCount(), static_cast<size_t>(LLBC_INFINITE));
@@ -215,7 +216,8 @@ TEST(TimerTest, SchedulesOneShotAndExposesMetadata)
     timer.GetTimerData()["tag"] = LLBC_String("one-shot");
     ASSERT_EQ(timer.Schedule(LLBC_TimeSpan::zero, LLBC_TimeSpan::zero, 1), LLBC_OK);
     EXPECT_TRUE(timer.IsScheduled());
-    EXPECT_NE(timer.GetTimerId(), LLBC_INVALID_TIMER_ID);
+    EXPECT_NE(timer.GetTimerId(),
+              static_cast<decltype(timer.GetTimerId())>(LLBC_INVALID_TIMER_ID));
     EXPECT_EQ(timer.GetTotalTriggerCount(), 1lu);
     EXPECT_EQ(timer.GetTriggeredCount(), 0lu);
     EXPECT_EQ(timer.GetTimerData()["tag"].As<LLBC_String>(), "one-shot");

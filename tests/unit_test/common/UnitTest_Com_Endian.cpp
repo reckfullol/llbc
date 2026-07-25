@@ -81,10 +81,8 @@ TEST(EndianTest, ReversesByteOrderForSupportedScalarWidths)
     const double reversedTwice = LLBC_ReverseBytes(LLBC_ReverseBytes(value));
     EXPECT_EQ(::memcmp(&value, &reversedTwice, sizeof(value)), 0);
 
-    const ldouble longDoubleValue = 456.75L;
-    const ldouble reversedLongDouble =
-        LLBC_ReverseBytes(LLBC_ReverseBytes(longDoubleValue));
-    EXPECT_EQ(reversedLongDouble, longDoubleValue);
+    // Do not use long double here: x87 ABIs store it with padding, and the
+    // byte-reversed intermediate can be an unstable floating representation.
 }
 
 // Host/network conversion is an involution regardless of the local machine
