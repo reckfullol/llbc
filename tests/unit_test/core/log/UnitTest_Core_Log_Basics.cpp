@@ -463,13 +463,13 @@ TEST(LogBasicsTest, NormalizesTraceDataAndPreservesFixedBufferInvariants)
 
     const std::string longKey(LLBC_CFG_CORE_LOG_TRACE_KEY_LIMIT + 8, 'k');
     const LLBC_LogTrace::TraceKey truncatedKey(longKey);
-    EXPECT_EQ(truncatedKey.strLen, LLBC_CFG_CORE_LOG_TRACE_KEY_LIMIT - 1);
+    EXPECT_EQ(truncatedKey.strLen, static_cast<size_t>(LLBC_CFG_CORE_LOG_TRACE_KEY_LIMIT - 1));
     EXPECT_EQ(truncatedKey.str[truncatedKey.strLen], '\0');
     EXPECT_EQ(std::string(truncatedKey.str, truncatedKey.strLen),
               std::string(LLBC_CFG_CORE_LOG_TRACE_KEY_LIMIT - 1, 'k'));
 
     const LLBC_LogTrace::TraceKey numericKey(std::numeric_limits<uint64>::max());
-    EXPECT_EQ(numericKey.strLen, LLBC_CFG_CORE_LOG_TRACE_KEY_LIMIT - 1);
+    EXPECT_EQ(numericKey.strLen, static_cast<size_t>(LLBC_CFG_CORE_LOG_TRACE_KEY_LIMIT - 1));
     EXPECT_EQ(numericKey.str[numericKey.strLen], '\0');
     EXPECT_EQ(std::string(numericKey.str, numericKey.strLen), "184467440737095");
 
