@@ -74,11 +74,16 @@ void LLBC_PacketHeaderAssembler::Reset()
 
 void LLBC_PacketHeaderAssembler::SetToPacket(LLBC_Packet &packet) const
 {
-    uint32 len = *reinterpret_cast<uint32 *>(_header);
-    sint32 opcode = *reinterpret_cast<sint32 *>(_header + 4);
-    uint16 status = *reinterpret_cast<uint16 *>(_header + 8);
-    uint16 flags = *reinterpret_cast<uint16 *>(_header + 10);
-    sint64 extData1 = *reinterpret_cast<sint64 *>(_header + 12);
+    uint32 len;
+    sint32 opcode;
+    uint16 status;
+    uint16 flags;
+    sint64 extData1;
+    memcpy(&len, _header, sizeof(len));
+    memcpy(&opcode, _header + 4, sizeof(opcode));
+    memcpy(&status, _header + 8, sizeof(status));
+    memcpy(&flags, _header + 10, sizeof(flags));
+    memcpy(&extData1, _header + 12, sizeof(extData1));
 
 #if LLBC_CFG_COMM_ORDER_IS_NET_ORDER
     len = LLBC_Net2Host(len);
