@@ -289,6 +289,28 @@ sint64 LLBC_File::GetFileSize() const
         return -1;
     }
 
+#if LLBC_TARGET_PLATFORM_NON_WIN32
+    struct stat fileStat {};
+    const int fileNo = GetFileNo();
+    if (fileNo == -1)
+        return -1;
+
+    if (fstat(fileNo, &fileStat) != 0)
+    {
+        LLBC_SetLastError(LLBC_ERROR_CLIB);
+        return -1;
+    }
+
+    // Directory stream positions are opaque cookies on POSIX and can look like
+    // enormous file sizes. Reject them before ReadToEnd() sizes its buffer.
+    if (S_ISDIR(fileStat.st_mode))
+    {
+        errno = EISDIR;
+        LLBC_SetLastError(LLBC_ERROR_CLIB);
+        return -1;
+    }
+#endif
+
 #if LLBC_TARGET_PLATFORM_WIN32
     const sint64 oldPos = _ftelli64(_handle);
     if (_fseeki64(_handle, 0, LLBC_FileSeekOrigin::End) != 0)

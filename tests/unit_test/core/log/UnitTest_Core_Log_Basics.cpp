@@ -697,7 +697,8 @@ TEST(LogBasicsTest, ManagesLogTracesThroughConfiguredLogger)
         truncatedTraceSize = data->logTrace ? data->logTrace->size() : 0;
     }), LLBC_OK);
     EXPECT_EQ(root->Info("trace-limit", "/tmp/demo.cpp", 8, "TraceFn", "limit"), LLBC_OK);
-    EXPECT_EQ(truncatedTraceSize, LLBC_CFG_CORE_LOG_TRACE_BUILT_CONTENT_SIZE_LIMIT - 1);
+    EXPECT_EQ(truncatedTraceSize,
+              static_cast<size_t>(LLBC_CFG_CORE_LOG_TRACE_BUILT_CONTENT_SIZE_LIMIT - 1));
     ASSERT_EQ(root->SetLogHook(LLBC_LogLevel::Info, nullptr), LLBC_OK);
     root->ClearAllColorLogTraces();
     root->ClearAllLogTraces();

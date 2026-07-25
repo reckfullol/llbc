@@ -84,7 +84,7 @@ TEST(EndianTest, ReversesByteOrderForSupportedScalarWidths)
     const ldouble longDoubleValue = 456.75L;
     const ldouble reversedLongDouble =
         LLBC_ReverseBytes(LLBC_ReverseBytes(longDoubleValue));
-    EXPECT_EQ(::memcmp(&longDoubleValue, &reversedLongDouble, sizeof(longDoubleValue)), 0);
+    EXPECT_EQ(reversedLongDouble, longDoubleValue);
 }
 
 // Host/network conversion is an involution regardless of the local machine
