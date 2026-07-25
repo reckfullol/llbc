@@ -1,0 +1,99 @@
+name: PR actions verification
+
+on:
+  push:
+    branches:
+      - test/actions-verification
+
+permissions:
+  contents: read
+
+jobs:
+  linux-build:
+    name: Linux build verification
+    runs-on: ubuntu-latest
+    container: docker.io/centos:8
+    steps:
+      - name: Update yum repositories
+        run: |
+          sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo
+          sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo
+          sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo
+      - name: Install dependencies
+        run: |
+          yum install -y openssl-devel wget tar gcc gcc-c++ libuuid-devel automake autoconf libtool make git cmake python2
+          ln -s /usr/bin/python2 /usr/bin/python
+          wget -q https://github.com/libunwind/libunwind/archive/refs/tags/v1.2.1.tar.gz
+          tar -zxf v1.2.1.tar.gz
+          cd libunwind-1.2.1
+          ./autogen.sh
+          ./configure
+          make -j4
+          make install
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Build libraries and tests
+        run: |
+          make core_lib config=debug64 -j4
+          make core_lib config=release64 -j4
+          make tests config=debug64 -j4
+          make tests config=release64 -j4
+      - name: Build language wrappers
+        run: |
+          make py_wrap config=debug64 -j4
+          make py_wrap config=release64 -j4
+          make lu_wrap config=debug64 -j4
+          make lu_wrap config=release64 -j4
+
+  macos-build:
+    name: macOS build verification
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Build libraries and tests
+        run: |
+          make core_lib config=debug64 -j4
+          make core_lib config=release64 -j4
+          make tests config=release64 -j4
+
+  windows-build:
+    name: Windows build verification
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: microsoft/setup-msbuild@main
+      - name: Generate Visual Studio solution
+        run: echo vs2022 | ./WinPreBuild.bat 0
+      - name: Build libraries
+        run: |
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=debug32 -p:Platform=x86 -t:llbc
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=release32 -p:Platform=x86 -t:llbc
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=debug64 -p:Platform=x64 -t:llbc
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=release64 -p:Platform=x64 -t:llbc
+      - name: Build tests
+        run: |
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=release64 -p:Platform=x64 -t:tests\func_test
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=release64 -p:Platform=x64 -t:tests\quick_start
+          msbuild.exe build/vs2022/llbc_vs2022.sln -p:Configuration=release64 -p:Platform=x64 -t:tests\example
+
+  unit-test-coverage:
+    name: Unit test coverage verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Install toolchain and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm cmake uuid-dev libunwind-dev
+      - name: Run unit-test coverage
+        env:
+          CC: clang
+          CXX: clang++
+        run: bash tools/coverage/run_unit_test_coverage.sh
